@@ -1,0 +1,35 @@
+>>>>>>>>>>>Lexical Analysis<<<<<<<<<<<
+
+	< int , Keywords , 33 >
+	< main , ID , 0 >
+	< ( , Delimiters , 2 >
+	< void , Keywords , 68 >
+	< ) , Delimiters , 3 >
+	< { , Delimiters , 0 >
+	< int , Keywords , 33 >
+	< x , ID , 1 >
+	< [ , Delimiters , 4 >
+	< 0 , Num , 0 >
+	< ] , Delimiters , 5 >
+	< = , Operators , 0 >
+	< 11 , Num , 1 >
+	< ; , Delimiters , 7 >
+	< long , Keywords , 34 >
+	< y , ID , 2 >
+	< = , Operators , 0 >
+	< 11.11 , Num , 2 >
+	< ; , Delimiters , 7 >
+	< int , Keywords , 33 >
+	< 1e , Error , 0 >
+	< = , Operators , 0 >
+	< 11.11.11 , Error , 1 >
+	< ; , Delimiters , 7 >
+	< y , ID , 2 >
+	< = , Operators , 0 >
+	< x , ID , 1 >
+	< ++ , Operators , 17 >
+	< ; , Delimiters , 7 >
+	< return , Keywords , 48 >
+	< 0 , Num , 0 >
+	< ; , Delimiters , 7 >
+	< } , Delimiters , 1 >

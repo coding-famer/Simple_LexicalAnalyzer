@@ -1,6 +1,7 @@
 #include<iostream>
 #include <fstream>
 #include<vector>
+#include<cstring>
 
 using namespace std;
 
@@ -13,9 +14,6 @@ struct Token
     int value;
     int id;
 };
-#define nKeywords 74  //关键字数量
-#define nDelimiters 11  //界限符数量
-#define nOperators 23  // 运算符数量
 //关键字
 vector<char*> Keywords = {"and","and_eq","asm","auto","bitand","bitor","bool","break",
 "case","catch","char","class","compl","const","const_cast","continue","default",
@@ -24,45 +22,66 @@ vector<char*> Keywords = {"and","and_eq","asm","auto","bitand","bitor","bool","b
 "new","not","not_eq","operator","or","or_eq","private","protected","public","register",
 "reinterpret_cast","return","short","signed","sizeof","static","static_cast","struct",
 "switch","template","this","throw","true","try","typedef","typeid","typename","union",
-"unsigned","using","virtual","void","volatile","wchar_t","while","xor","xor_eq"};//keywords
+"unsigned","using","virtual","void","volatile","wchar_t","while","xor","xor_eq"};
 //界限符
-vector<char*> Delimiters = {"{","}","(",")","[","]",",",";","\"","'","::"};//delimiters
+vector<char*> Delimiters = {"{","}","(",")","[","]",",",";","\"","'","::"};
 //运算符
 vector<char*> Operators = {"=","+","-","*","/","%","^","!",">","<",">=","<=","==","!=","<<",">>",
-	".","++","--","&","&&","|","||"};//operators
+	".","++","--","&","&&","|","||"};
+//符号集
+vector<char> Symbol = {'{','}','(',')','[',']',',',';','"','\'',':','=','+','-','*',
+    '/','%','^','!','>','<','=','!','&','|'};
 vector<char*> ID;
 vector<char *> Num;
-
+vector<char *> Error;
+vector<char *> Type = {"Keywords", "Delimiters", "Operators", "Error","ID", "Num"};
 bool IsLetter(char ch)
 {
-    if((ch>='a'&&ch<='z')||ch>='A'&&ch<='z')
+    if((ch>='a'&&ch<='z')||(ch>='A'&&ch<='Z'))
         return 1;
     else
         return 0;
 }
 bool IsDigit(char ch)
 {
-    if(ch>='0'&&ch<=9)
+    if(ch>='0'&&ch<='9')
         return 1;
     else
         return 0;
 }
-int IsReservedWords(char* str)
+int IsSymbol(char ch)
 {
-    for (int i = 0; i < nKeywords;i++)
+    for (int i = 0; i < Symbol.size();i++)
+    {
+        if(Symbol[i]==ch)
+            return 1;
+    }
+    return 0;    
+}
+int IsKeyWords(char* str)
+{
+    for (int i = 0; i < Keywords.size();i++)
     {
         if(!strcmp(Keywords[i],str))
             return i;
     }
-    for (int i = 0; i < nDelimiters;i++)
+    return -1;
+}
+int IsDelimiters(char* str)
+{
+    for (int i = 0; i < Delimiters.size();i++)
     {
         if(!strcmp(Delimiters[i],str))
-            return nKeywords + i;
+            return i;
     }
-    for (int i = 0; i < nOperators;i++)
+    return -1;
+}
+int IsOperators(char* str)
+{
+    for (int i = 0; i < Operators.size();i++)
     {
         if(!strcmp(Operators[i],str))
-            return nKeywords + nDelimiters + i;
+            return i;
     }
     return -1;
 }
@@ -75,8 +94,10 @@ int CheckID(char *strToken)
             return i;
         i++;
     }
-    ID.push_back(strToken);
-    return ID.size();
+    char *tmp = new char[20];
+    strcpy_s(tmp,20,strToken);
+    ID.push_back(tmp);
+    return ID.size()-1;
 }
 int CheckNum(char *strToken)
 {
@@ -87,9 +108,26 @@ int CheckNum(char *strToken)
             return i;
         i++;
     }
-    Num.push_back(strToken);
-    return Num.size();
+    char *tmp = new char[20];
+    strcpy_s(tmp,20,strToken);
+    Num.push_back(tmp);
+    return Num.size()-1;
 }
+int CheckError(char *strToken)
+{
+    int i = 0;
+    while(i<Error.size())
+    {
+        if(!strcmp(strToken,Error[i]))
+            return i;
+        i++;
+    }
+    char *tmp = new char[20];
+    strcpy_s(tmp,20,strToken);
+    Error.push_back(tmp);
+    return Error.size()-1;
+}
+
 
 void analysis(FILE* stream)
 {
@@ -99,107 +137,205 @@ void analysis(FILE* stream)
 		exit(-1);
 	}
 
-    vector<Token> TokenStream;
+    vector<Token> TokenStream = {};
     char ch;
     char str[20];
     int pstr=0;
     int state = 0;
-    int oldstate = 0;
     int value;
     while((ch = fgetc(stream)) != EOF)
     {
+        if(ch==' '||ch=='\n'||ch=='\t'||(IsSymbol(ch)&&state!=5&&state!=0)||(state==5&&(IsDigit(ch)||IsLetter(ch)))||state==6)
+        {
+            Token tmp;
+            str[pstr] = '\0';
+            switch(state)
+                {
+                    case 0:  //跳过空格
+                        break;
+                    case 1:  //为数字（整数）
+                    case 4:   //是数字（小数）
+                        value = CheckNum(str);
+                        tmp.value = value;
+                        tmp.code = Num[value];
+                        tmp.id = 5;
+                        TokenStream.push_back(tmp);
+                        str[pstr] = '\0';
+                        pstr = 0;
+                        state = 0;
+                        break;
+                    case 2:   //为纯字符
+                        value = IsKeyWords(str);
+                        if(value ==-1)
+                        {
+                            value = CheckID(str);
+                            tmp.value = value;
+                            tmp.code = ID[value];
+                            tmp.id = 4;
+                            TokenStream.push_back(tmp);                            
+                        }
+                        else
+                        {
+                            tmp.value = value;
+                            tmp.code = Keywords[value];
+                            tmp.id = 0;
+                            TokenStream.push_back(tmp);
+                        }
+                        str[pstr] = '/0';
+                        pstr = 0;
+                        state = 0;
+                        break;
+                    case 3:    //有数字和字符且第一个为字符
+                        value = CheckID(str);
+                        tmp.value = value;
+                        tmp.code = ID[value];
+                        tmp.id = 4;
+                        TokenStream.push_back(tmp); 
+                        str[pstr] = '/0';
+                        pstr = 0;
+                        state = 0;
+                        break;
+                    case 5:
+                    case 6:
+                        value = IsDelimiters(str);
+                        if(value!=-1)
+                        {
+                            tmp.value = value;
+                            tmp.code = Delimiters[value];
+                            tmp.id = 1;
+                            TokenStream.push_back(tmp); 
+                            str[pstr] = '/0';
+                            pstr = 0;
+                            state = 0;
+                            break;
+                        }
+                        else 
+                        {
+                            value = IsOperators(str);
+                            if(value!=-1)
+                            {
+                                tmp.value = value;
+                                tmp.code = Operators[value];
+                                tmp.id = 2;
+                                TokenStream.push_back(tmp); 
+                                str[pstr] = '/0';
+                                pstr = 0;
+                                state = 0;
+                                break;
+                            }
+                            else
+                            {
+                                state = 100;
+                            }
+                        }
+                    case 100:
+                        value = CheckError(str);
+                        tmp.value = value;
+                        tmp.code = Error[value];
+                        tmp.id = 3;
+                        TokenStream.push_back(tmp);
+                        str[pstr] = '/0';
+                        pstr = 0;
+                        state = 0;
+                        break;
+                }
+        }
         switch(state)
         {
             case 0: //之前没有读入
-                if(ch==' '||ch=='\n'||ch=='\t')
-                {
-                    oldstate = state;
-                    state = 10;
-                }
-                else if(IsLetter(ch)!=-1)
+                if(IsLetter(ch))
                 {
                     state = 2;
                     str[pstr++] = ch;
                 }
-                else if(IsDigit(ch)!=-1)
+                else if(IsDigit(ch))
                 {
                     state = 1;
+                    str[pstr++] = ch;
+                }
+                else if (IsSymbol(ch))
+                {
+                    state = 5;
                     str[pstr++] = ch;
                 }
                 break;
             case 1: //之前读入全为数字
-                if(ch==' '||ch=='\n'||ch=='\t')
-                {
-                    oldstate = state;
-                    state = 10;
-                }
-                else if(IsDigit(ch)!=-1)
+                if(IsDigit(ch))
                 {
                     state = 1;
                     str[pstr++] = ch;
                 }
+                else if(ch == '.')
+                {
+                    state = 4;
+                    str[pstr++] = ch;
+                }
                 else
                 {
+                    str[pstr++] = ch;
                     state = 100;
                 }
                 break;
             case 2:   //之前读入全为字符
-                if(ch==' '||ch=='\n'||ch=='\t')
-                {
-                    oldstate = state;
-                    state = 10;
-                }
-                else if(IsDigit(ch)!=-1)
+                if(IsDigit(ch))
                 {
                     state = 3;
                     str[pstr++] = ch;
                 }  
-                else if(IsLetter(ch)!=-1)
+                else if(IsLetter(ch))
                 {
                     state = 2;
                     str[pstr++] = ch;
                 }  
                 else
                 {
+                    str[pstr++] = ch;
                     state = 100;
                 }            
                 break;
-            case 3:  //之前读入有字符和数字且第一个为字符s
-                break;
-            case 10:  //读到空格回车等
-                str[pstr] = '\0';
-                switch(oldstate)
+            case 3:  //之前读入有字符和数字且第一个为字符
+                if(IsLetter(ch))
                 {
-                    case 0:
-                        break;
-                    case 1:
-                        value = CheckID(str);
-                        Token tmp;
-                        tmp.value = value;
-                        tmp.code = str;
-                        tmp.id = 0;
-                        TokenStream.push_back(tmp);
-                        pstr = 0;
-                        state = 0;
-                        oldstate = 0;
-                        break;
-                    case 2:
-                }
+                    state = 3;
+                    str[pstr++] = ch;
+                }  
+                else
+                {
+                    str[pstr++] = ch;
+                    state = 100;
+                }            
                 break;
-            case 100: //内容出现错误
-                while(ch!=' '||ch!='\t'||ch!='\n')
-                    str[pstr++] = fgetc(stream);
-                Token tmp;
-                tmp.value = -1;
-                tmp.code = str;
-                tmp.id = 0;
-                TokenStream.push_back(tmp);
-                pstr = 0;
-                state = 0;
-                oldstate = 0;               
+            case 4:  //之前读入过一个小数点
+                if(IsDigit(ch))
+                {
+                    state = 4;
+                    str[pstr++] = ch;
+                }
+                else
+                {
+                    str[pstr++] = ch;
+                    state = 100;
+                }                
+                break;
+            case 5:  //读入过一个符号
+                str[pstr++] = ch;
+                state = 6;
+                break;
+            case 6:
+                str[pstr++] = ch;
+                state = 6;
+                break;            
 
+            case 100: //内容出现错误
+                str[pstr++] = ch;
+                state = 100;            
                 break;
         }
+    }
+    for (int i = 0; i < TokenStream.size();i++)
+    {
+        cout << "\t< "  << TokenStream[i].code << " , "<<Type[TokenStream[i].id] <<" , "<< TokenStream[i].value << " >" <<endl;
+		outfile << "\t< "  << TokenStream[i].code << " , "<<Type[TokenStream[i].id] <<" , "<< TokenStream[i].value << " >" <<endl;        
     }
 }
 
@@ -226,13 +362,9 @@ int main()
 
     fseek(stream,0L,SEEK_SET);
 	cout << ">>>>>>>>>>>Lexical Analysis<<<<<<<<<<<"
-		<<"\nnote：KW = key word, ID = identification, "
-		<<"\nNUM = number, DM = delimiter, OP = operator." 
 		<< endl << endl;
 
 	outfile << ">>>>>>>>>>>Lexical Analysis<<<<<<<<<<<"
-		<<"\nnote：KW = key word, ID = identification, "
-		<<"\nNUM = number, DM = delimiter, OP = operator." 
 		<< endl << endl;
 
 	outfile.close();
@@ -241,19 +373,3 @@ int main()
     return 0;
 }
 
-
-                // else if(IsLetter(ch)!=-1)
-                //     {
-                //         while(IsDigit(ch)||IsLetter(ch))
-                //         {
-                //             str[pstr++] = ch;
-                //             ch = fgetc(stream);
-                //         }
-                //         fseek(stream, -1L, SEEK_CUR);
-                //         str[pstr] = '\0';
-                //         int value = IsReservedWords(str);
-                //     }
-                // else if(IsDigit(ch)!=-1)
-                // {
-                    
-                // }
