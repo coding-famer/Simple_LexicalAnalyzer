@@ -321,7 +321,7 @@ void analysis(FILE* stream)
                 str[pstr++] = ch;
                 state = 6;
                 break;
-            case 6:
+            case 6:  //读入过两个符号
                 str[pstr++] = ch;
                 state = 6;
                 break;            

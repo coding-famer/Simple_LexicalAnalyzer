@@ -29,6 +29,40 @@
 	< x , ID , 1 >
 	< ++ , Operators , 17 >
 	< ; , Delimiters , 7 >
+	< if , Keywords , 31 >
+	< ( , Delimiters , 2 >
+	< x1s , ID , 3 >
+	< = , Operators , 0 >
+	< 5 , Num , 3 >
+	< ) , Delimiters , 3 >
+	< x1 , ID , 4 >
+	< = , Operators , 0 >
+	< 5 , Num , 3 >
+	< ; , Delimiters , 7 >
+	< else , Keywords , 21 >
+	< xy , ID , 5 >
+	< = , Operators , 0 >
+	< x , ID , 1 >
+	< ^ , Operators , 6 >
+	< 7 , Num , 4 >
+	< ; , Delimiters , 7 >
+	< while , Keywords , 71 >
+	< ( , Delimiters , 2 >
+	< a , ID , 6 >
+	< != , Operators , 13 >
+	< 8 , Num , 5 >
+	< ) , Delimiters , 3 >
+	< do , Keywords , 18 >
+	< b , ID , 7 >
+	< = , Operators , 0 >
+	< 2 , Num , 6 >
+	< * , Operators , 3 >
+	< x , ID , 1 >
+	< / , Operators , 4 >
+	< 3 , Num , 7 >
+	< % , Operators , 5 >
+	< 7 , Num , 4 >
+	< ; , Delimiters , 7 >
 	< return , Keywords , 48 >
 	< 0 , Num , 0 >
 	< ; , Delimiters , 7 >
